@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from config import *
+
 import time
 from datetime import datetime
 import json
 import requests
-
-from config import *
+from flask import Flask, request, json
+import ipaddress
 
 
 def say(my_message):
@@ -23,17 +25,6 @@ def say(my_message):
         timeout=30,
     ).text
     return result
-
-
-def get_last_action():
-    query = {"key": TRELLO_API_KEY, "token": TRELLO_TOKEN}
-    action = requests.get(
-        url=f"https://api.trello.com/1/boards/{TRELLO_BOARD_ID}/actions",
-        params=query,
-        timeout=60,
-    ).json()
-
-    return action[0]
 
 
 def create_card(action, member_name):
@@ -58,6 +49,7 @@ def rename_card(action, member_name):
     say(
         f"""✏️ {member_name} переименовал карточку!
     Статус: <b>{list_name}</b>
+
 
     <i>{card_name_old}</i>
 
@@ -86,8 +78,8 @@ def close_card(action, member_name):
     list_name = action["list"]["name"]
     say(
         f"""🗑 {member_name} удалил карточку!
-    Статус: <b>{list_name}</b>
-    Название: <b>{card_name}</b>"""
+    Название: <b>{card_name}</b>
+    Статус: <b>{list_name}</b>"""
     )
 
 
@@ -98,8 +90,8 @@ def new_comment(action, member_name):
     comment_text = action["text"]
 
     say(
-        f"""Статус: <b>{list_name}</b>
-    Название: <a href="{card_url}">{card_name}</a>
+        f"""Название: <a href="{card_url}">{card_name}</a>
+    Статус: <b>{list_name}</b>
 
     💬 Комментарий {member_name}: <i>{comment_text}</i>"""
     )
@@ -112,8 +104,8 @@ def new_attachment(action, member_name):
     attachment_url = action["attachment"]["url"]
 
     say(
-        f"""Статус: <b>{list_name}</b>
-    Название: <a href="{card_url}">{card_name}</a>
+        f"""Название: <a href="{card_url}">{card_name}</a>
+    Статус: <b>{list_name}</b>
 
     📎 <a href="{attachment_url}">Новое вложение</a> от {member_name}"""
     )
@@ -126,8 +118,8 @@ def due_time(action, member_name):
     due = datetime.fromisoformat(action["card"]["due"])
 
     say(
-        f"""Статус: <b>{list_name}</b>
-    Название: <a href="{card_url}">{card_name}</a>
+        f"""Название: <a href="{card_url}">{card_name}</a>
+    Статус: <b>{list_name}</b>
 
     ⏰ {member_name} выставил дедлайн: <i>{due.day}/{due.month}/{due.year} в {due.hour}:{due.minute}</i>"""
     )
@@ -140,84 +132,86 @@ def new_desc(action, member_name):
     desc = action["card"]["desc"]
 
     say(
-        f"""📍 Статус: <b>{list_name}</b>
-    Название: <a href="{card_url}">{card_name}</a>
+        f"""Название: <a href="{card_url}">{card_name}</a>
+    Статус: <b>{list_name}</b>
 
     📝 {member_name} добавил описание: <i>{desc}</i>"""
     )
 
 
-# # # #
-
-
-action_old = get_last_action()
-if "old" not in action_old["data"]:
-    action_old["data"]["old"] = {}
-
-# # # # # # # # # # # #
-
 print("[#] Trello bot started..")
-print("Delay: " + str(DELAY) + " sec")
 
-while True:
-    # # # # # # # # # #
-    while True:  # make error catching, retry request if error occurs
+
+def main(action):
+    action_type = action["type"]
+    action_data = action["data"]
+    member_name = action["memberCreator"]["fullName"]
+
+    if "old" not in action["data"]:
+        action["data"]["old"] = {}
+
+    if "card" not in action_data:
+        pass
+
+    elif action_type == "commentCard":
+        new_comment(action_data, member_name)
+
+    elif action_type == "addAttachmentToCard":
+        new_attachment(action_data, member_name)
+
+    elif "listBefore" in action_data and "listAfter" in action_data:
+        transfer_card(action_data, member_name)
+
+    elif action_type == "updateCard" and "name" in action_data["old"]:
+        rename_card(action_data, member_name)
+
+    elif action_type == "createCard":
+        create_card(action_data, member_name)
+
+    elif "closed" in action_data["old"] and action_data["card"]["closed"]:
+        close_card(action_data, member_name)
+
+    elif "due" in action_data["card"]:
         try:
-            action_new = get_last_action()
-            break
-        except (json.decoder.JSONDecodeError, requests.exceptions.RequestException):
-            print("=== Exception caught!")
-            print(traceback.format_exc())
-            time.sleep(5)
-    # # # # # # # # # #
-
-    # # # # # # # # # #
-    if "old" not in action_new["data"]:
-        action_new["data"]["old"] = {}
-
-    # # # # # # # # # # # #
-    if action_old != action_new:
-        action_type = action_new["type"]
-        action_data = action_new["data"]
-        member_name = action_new["memberCreator"]["fullName"]
-
-        if "card" not in action_data:
+            due_time(action_data, member_name)
+        except TypeError:
             pass
 
-        elif action_type == "commentCard":
-            new_comment(action_data, member_name)
+    elif "desc" in action_data["card"]:
+        new_desc(action_data, member_name)
 
-        elif action_type == "addAttachmentToCard":
-            new_attachment(action_data, member_name)
+    else:
+        print(
+            "❗ Unknown action on Trello.\nAdditional info was stored in unknown_actions.log",
+        )
+        with open("unknown_actions.log", "w", encoding="utf-8") as f:
+            f.write("\n\n" + str(action))
 
-        elif "listBefore" in action_data and "listAfter" in action_data:
-            transfer_card(action_data, member_name)
 
-        elif action_type == "updateCard" and "name" in action_data["old"]:
-            rename_card(action_data, member_name)
+app = Flask(__name__)
 
-        elif action_type == "createCard":
-            create_card(action_data, member_name)
 
-        elif "closed" in action_data["old"] and action_data["card"]["closed"]:
-            close_card(action_data, member_name)
+@app.route("/", methods=["POST", "HEAD"])
+def webhook():
+    if ipaddress.ip_address(request.remote_addr) not in ipaddress.ip_network(
+        "104.192.142.240/28"
+    ):
+        print(f"New request from not white-listed ip: {request.remote_addr} . Aborted")
+        abort(403)
 
-        elif "due" in action_data["card"]:
-            try:
-                due_time(action_data, member_name)
-            except TypeError:
-                pass
+    if request.method == "HEAD":
+        return {}, 200
 
-        elif "desc" in action_data["card"]:
-            new_desc(action_data, member_name)
+    if request.method == "POST":
+        print(f"Received data from Webhook. Type: {request.json['action']['type']}")
 
-        else:
-            print(
-                "❗ Новое событие на Trello.\nНо мне не удалось отобразить изменения.\n\nДополнительная инфомация была записана в unknown_events.log",
-            )
-            with open("unknown_events.log", "w", encoding="utf-8") as f:
-                f.write("\n\n" + str(action_new))
-        # # # # # # # # # # # # # # # # # # # # # # # # # # #
-        # .replace("<", "&lt;").replace(">", "&gt;") FOR AVOID "Bad Request: can't parse entities: Unsupported start tag \"module\" at byte offset 140"
-    action_old = action_new
-    time.sleep(DELAY)
+        if SET_LOGGING:
+            print("+++++++++++++++++++++++", request.json, "--------------------------")
+            with open("actions.log", "w", encoding="utf-8") as f:
+                f.write("\n\n" + str(request.json))
+
+        main(request.json["action"])
+    return {}, 200
+
+
+app.run(host="0.0.0.0", port=PORT)
