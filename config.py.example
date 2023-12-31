@@ -1,0 +1,11 @@
+TELEGRAM_BOT_TOKEN = "1234567890:JHGJDdjKJJGg2424kjJG"
+TRELLO_API_KEY = "bvbb4234n2bbvbb4234n2bbvbb4234n2bbvbb4234n2bbvbb4234n2bbvbb4234n2b"
+TRELLO_TOKEN = "ATTA...."
+TRELLO_BOARD_ID = "Ldy5Y4b0"
+
+
+WEBHOOK_URL = "example.com"  # currently no HTTPS support
+PORT = 1234
+
+SET_LOGGING = False  # whether print and save all webhook JSONs
+CHAT_ID = -12345678

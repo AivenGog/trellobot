@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 from config import *
 
 import time
@@ -12,7 +9,7 @@ import ipaddress
 
 
 def say(my_message):
-    """A imprortant feature for sending messages to telegram by a bot"""
+    # Sending messages to telegram group by the bot
     my_message = my_message.replace("	", "")
     result = requests.post(
         url=f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
@@ -27,10 +24,10 @@ def say(my_message):
     return result
 
 
-def create_card(action, member_name):
-    card_name = action["card"]["name"]
-    card_url = f"https://trello.com/c/{action['card']['shortLink']}"
-    list_name = action["list"]["name"]
+def create_card(action_data, member_name):
+    card_name = action_data["card"]["name"]
+    card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
+    list_name = action_data["list"]["name"]
 
     say(
         f"""🔥 {member_name} создал новую карточку!
@@ -40,11 +37,11 @@ def create_card(action, member_name):
     )
 
 
-def rename_card(action, member_name):
-    card_name_old = action["old"]["name"]
-    card_name_new = action["card"]["name"]
-    card_url = f"https://trello.com/c/{action['card']['shortLink']}"
-    list_name = action["list"]["name"]
+def rename_card(action_data, member_name):
+    card_name_old = action_data["old"]["name"]
+    card_name_new = action_data["card"]["name"]
+    card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
+    list_name = action_data["list"]["name"]
 
     say(
         f"""✏️ {member_name} переименовал карточку!
@@ -59,11 +56,11 @@ def rename_card(action, member_name):
     )
 
 
-def transfer_card(action, member_name):
-    card_name = action["card"]["name"]
-    card_url = f"https://trello.com/c/{action['card']['shortLink']}"
-    list_name_old = action["listBefore"]["name"]
-    list_name_new = action["listAfter"]["name"]
+def transfer_card(action_data, member_name):
+    card_name = action_data["card"]["name"]
+    card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
+    list_name_old = action_data["listBefore"]["name"]
+    list_name_new = action_data["listAfter"]["name"]
 
     say(
         f"""🔃 {member_name} поменял статус карточки!
@@ -73,9 +70,9 @@ def transfer_card(action, member_name):
     )
 
 
-def close_card(action, member_name):
-    card_name = action["card"]["name"]
-    list_name = action["list"]["name"]
+def close_card(action_data, member_name):
+    card_name = action_data["card"]["name"]
+    list_name = action_data["list"]["name"]
     say(
         f"""🗑 {member_name} удалил карточку!
     Название: <b>{card_name}</b>
@@ -83,11 +80,11 @@ def close_card(action, member_name):
     )
 
 
-def new_comment(action, member_name):
-    card_name = action["card"]["name"]
-    card_url = f"https://trello.com/c/{action['card']['shortLink']}"
-    list_name = action["list"]["name"]
-    comment_text = action["text"]
+def new_comment(action_data, member_name):
+    card_name = action_data["card"]["name"]
+    card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
+    list_name = action_data["list"]["name"]
+    comment_text = action_data["text"]
 
     say(
         f"""Название: <a href="{card_url}">{card_name}</a>
@@ -97,11 +94,11 @@ def new_comment(action, member_name):
     )
 
 
-def new_attachment(action, member_name):
-    card_name = action["card"]["name"]
-    card_url = f"https://trello.com/c/{action['card']['shortLink']}"
-    list_name = action["list"]["name"]
-    attachment_url = action["attachment"]["url"]
+def new_attachment(action_data, member_name):
+    card_name = action_data["card"]["name"]
+    card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
+    list_name = action_data["list"]["name"]
+    attachment_url = action_data["attachment"]["url"]
 
     say(
         f"""Название: <a href="{card_url}">{card_name}</a>
@@ -111,11 +108,11 @@ def new_attachment(action, member_name):
     )
 
 
-def due_time(action, member_name):
-    card_name = action["card"]["name"]
-    card_url = f"https://trello.com/c/{action['card']['shortLink']}"
-    list_name = action["list"]["name"]
-    due = datetime.fromisoformat(action["card"]["due"])
+def due_time(action_data, member_name):
+    card_name = action_data["card"]["name"]
+    card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
+    list_name = action_data["list"]["name"]
+    due = datetime.fromisoformat(action_data["card"]["due"])
 
     say(
         f"""Название: <a href="{card_url}">{card_name}</a>
@@ -125,11 +122,11 @@ def due_time(action, member_name):
     )
 
 
-def new_desc(action, member_name):
-    card_name = action["card"]["name"]
-    card_url = f"https://trello.com/c/{action['card']['shortLink']}"
-    list_name = action["list"]["name"]
-    desc = action["card"]["desc"]
+def new_desc(action_data, member_name):
+    card_name = action_data["card"]["name"]
+    card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
+    list_name = action_data["list"]["name"]
+    desc = action_data["card"]["desc"]
 
     say(
         f"""Название: <a href="{card_url}">{card_name}</a>
@@ -142,6 +139,7 @@ def new_desc(action, member_name):
 print("[#] Trello bot started..")
 
 
+# processing json of an action on Trello board and calling appropriate function
 def main(action):
     action_type = action["type"]
     action_data = action["data"]
@@ -188,18 +186,22 @@ def main(action):
             f.write("\n\n" + str(action))
 
 
+# starting Flask server to listen to Trello webhook's requests
 app = Flask(__name__)
 
 
 @app.route("/", methods=["POST", "HEAD"])
 def webhook():
     if ipaddress.ip_address(request.remote_addr) not in ipaddress.ip_network(
+        # allow only Trello ips
+        # https://developer.atlassian.com/cloud/trello/guides/rest-api/webhooks/#webhook-sources
         "104.192.142.240/28"
     ):
-        print(f"New request from not white-listed ip: {request.remote_addr} . Aborted")
+        print(f"New request from not white-listed ip: {request.remote_addr}. Aborted")
         abort(403)
 
     if request.method == "HEAD":
+        # needed for inital response when webhook is created
         return {}, 200
 
     if request.method == "POST":

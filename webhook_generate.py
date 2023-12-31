@@ -1,3 +1,8 @@
+# The creation of webhook
+# trellobot.py must be running
+# Start only ONCE! Check README for more info.
+
+
 from config import *
 import requests
 
@@ -22,8 +27,14 @@ req = requests.post(
     timeout=60,
 )
 
+if "error" not in req.json():
+    print("Creation of webhook was successful!")
+    print(req.json())
 
-print(req.json())
-
-with open("webhook_json.log", "w", encoding="utf-8") as f:
-    f.write(str(req.json()))
+    with open("webhook_json.log", "w", encoding="utf-8") as f:
+        f.write(str(req.json()))
+else:
+    print(
+        "FATAL. Creation of webhook was unsuccessful! Check if trellobot.py is running and your host is visible on web."
+    )
+    print(f"Recieved JSON: {req.json()}")
