@@ -27,14 +27,16 @@ req = requests.post(
     timeout=60,
 )
 
-if "error" not in req.json():
+req_json = req.json()
+
+if "error" not in req_json:
     print("Creation of webhook was successful!")
-    print(req.json())
+    print(req_json)
 
     with open("webhook_json.log", "w", encoding="utf-8") as f:
-        f.write(str(req.json()))
+        f.write(str(req_json))
 else:
     print(
         "FATAL. Creation of webhook was unsuccessful! Check if trellobot.py is running and your host is visible on web."
     )
-    print(f"Recieved JSON: {req.json()}")
+    print(f"Recieved JSON: {req_json}")
