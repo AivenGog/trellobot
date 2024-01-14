@@ -1,8 +1,6 @@
 from config import *
 
-import time
 from datetime import datetime
-import json
 import requests
 from flask import Flask, request, json
 import ipaddress
