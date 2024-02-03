@@ -1,29 +1,44 @@
 from config import *
 
+import sys
+import json
 from datetime import datetime
-import requests
-from flask import Flask, request, json
 import ipaddress
+import logging
+
+import requests
+from flask import Flask, request
+
+logging.basicConfig(level=LOGGING_LEVEL)
+logger = logging.getLogger(name="trellobot")
+logger.info("Main module has started.")
 
 
-def say(my_message):
+def say(message):
     # Sending messages to telegram group by the bot
-    my_message = my_message.replace("	", "")
+    # Enable LOGGING_LEVEL='DEBUG' to view the message
+    message = message.replace("	", "")
+    logger.info("Trying to send the message.")
+    logger.debug(message)
     result = requests.post(
         url=f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
         data={
             "chat_id": CHAT_ID,
-            "text": my_message,
+            "text": message,
             "parse_mode": "HTML",
             "disable_web_page_preview": "true",
         },
         timeout=30,
-    ).text
-    return result
+    )
+
+    if result.ok:
+        logger.info("Message was successfully sent to telegram group.")
+    else:
+        logger.error("Could not send message to telegram.")
 
 
 def create_card(action_data, member_name):
-    card_name = action_data["card"]["name"]
+    logger.info(f"Starting a processing function: {sys._getframe(0).f_code.co_name}.")
     card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
     list_name = action_data["list"]["name"]
 
@@ -36,6 +51,7 @@ def create_card(action_data, member_name):
 
 
 def rename_card(action_data, member_name):
+    logger.info(f"Starting a processing function: {sys._getframe(0).f_code.co_name}.")
     card_name_old = action_data["old"]["name"]
     card_name_new = action_data["card"]["name"]
     card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
@@ -55,6 +71,7 @@ def rename_card(action_data, member_name):
 
 
 def transfer_card(action_data, member_name):
+    logger.info(f"Starting a processing function: {sys._getframe(0).f_code.co_name}.")
     card_name = action_data["card"]["name"]
     card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
     list_name_old = action_data["listBefore"]["name"]
@@ -69,6 +86,7 @@ def transfer_card(action_data, member_name):
 
 
 def close_card(action_data, member_name):
+    logger.info(f"Starting a processing function: {sys._getframe(0).f_code.co_name}.")
     card_name = action_data["card"]["name"]
     list_name = action_data["list"]["name"]
     say(
@@ -79,6 +97,7 @@ def close_card(action_data, member_name):
 
 
 def new_comment(action_data, member_name):
+    logger.info(f"Starting a processing function: {sys._getframe(0).f_code.co_name}.")
     card_name = action_data["card"]["name"]
     card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
     list_name = action_data["list"]["name"]
@@ -93,6 +112,7 @@ def new_comment(action_data, member_name):
 
 
 def new_attachment(action_data, member_name):
+    logger.info(f"Starting a processing function: {sys._getframe(0).f_code.co_name}.")
     card_name = action_data["card"]["name"]
     card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
     list_name = action_data["list"]["name"]
@@ -107,6 +127,7 @@ def new_attachment(action_data, member_name):
 
 
 def due_time(action_data, member_name):
+    logger.info(f"Starting a processing function: {sys._getframe(0).f_code.co_name}.")
     card_name = action_data["card"]["name"]
     card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
     list_name = action_data["list"]["name"]
@@ -121,6 +142,7 @@ def due_time(action_data, member_name):
 
 
 def new_desc(action_data, member_name):
+    logger.info(f"Starting a processing function: {sys._getframe(0).f_code.co_name}.")
     card_name = action_data["card"]["name"]
     card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
     list_name = action_data["list"]["name"]
@@ -134,19 +156,22 @@ def new_desc(action_data, member_name):
     )
 
 
-print("[#] Trello bot started..")
-
-
 # processing json of an action on Trello board and calling appropriate function
-def main(action):
+def handler(action):
     action_type = action["type"]
     action_data = action["data"]
     member_name = action["memberCreator"]["fullName"]
 
-    if "old" not in action["data"]:
+    logger.info("Action handler has started.")
+    logger.debug(f"Action: {action_type}")
+    logger.debug(f"Member name: {member_name}")
+    logger.debug(json.dumps(action_data, indent=2))
+
+    if "old" not in action_data:
         action["data"]["old"] = {}
 
     if "card" not in action_data:
+        logger.info("Received not a card action. Passing.")
         pass
 
     elif action_type == "commentCard":
@@ -171,20 +196,19 @@ def main(action):
         try:
             due_time(action_data, member_name)
         except TypeError:
+            logger.exception("Invalid due time. Passed without sending message.")
             pass
 
     elif "desc" in action_data["card"]:
         new_desc(action_data, member_name)
 
     else:
-        print(
-            "❗ Unknown action on Trello.\nAdditional info was stored in unknown_actions.log",
+        logger.warning(
+            f"Unknown action on Trello. Action type: {action_type}. To view json data set LOGGING_LEVEL='DEBUG'."
         )
-        with open("unknown_actions.log", "w", encoding="utf-8") as f:
-            f.write("\n\n" + str(action))
 
 
-# starting Flask server to listen to Trello webhook's requests
+# initialising Flask server to listen to Trello webhook's requests
 app = Flask(__name__)
 
 
@@ -195,23 +219,25 @@ def webhook():
         # https://developer.atlassian.com/cloud/trello/guides/rest-api/webhooks/#webhook-sources
         "104.192.142.240/28"
     ):
-        print(f"New request from not white-listed ip: {request.remote_addr}. Aborted")
+        logger.warning(
+            f"New request from not white-listed ip: {request.remote_addr}. Aborted"
+        )
         abort(403)
 
     if request.method == "HEAD":
         # needed for inital response when webhook is created
+        logger.info("Received HEAD request. Returning code 200.")
         return {}, 200
 
     if request.method == "POST":
-        print(f"Received data from Webhook. Type: {request.json['action']['type']}")
-
-        if SET_LOGGING:
-            print("+++++++++++++++++++++++", request.json, "--------------------------")
-            with open("actions.log", "w", encoding="utf-8") as f:
-                f.write("\n\n" + str(request.json))
-
-        main(request.json["action"])
+        logger.info(f"Received new action from Webhook. Passing to handler.")
+        handler(request.json["action"])
     return {}, 200
 
 
-app.run(host="0.0.0.0", port=PORT)
+logger.info("Starting Flask server!")
+try:
+    app.run(host="0.0.0.0", port=PORT)
+except Exception:
+    logger.exception("FATAL. Caught exception with server.")
+    sys.exit(1)
