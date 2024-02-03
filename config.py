@@ -16,5 +16,3 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # currently no HTTPS support
 PORT = os.getenv("PORT")
 
 LOGGING_LEVEL = os.getenv("LOGGING_LEVEL")
-# convert "INFO" to 20 and so on
-LOGGING_LEVEL = getattr(logging, str(LOGGING_LEVEL))
