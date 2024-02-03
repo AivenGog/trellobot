@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
+
 # deletes all webhooks on the token
-# FOR TESTING PURPOSES ONLY
+# start if bot sends several same messages
 
 from config import *
 
