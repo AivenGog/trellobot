@@ -85,14 +85,19 @@ git clone https://github.com/AivenGog/trellobot.git && cd trellobot
 ```bash
 docker build -t trellobot . 
 ```
+
+Объявите переменную ``PORT`` с номером вашего открытого порта, на котором будет работать сервер.
+
+```bash
+export PORT=1234
+```
 Запустите контейнер.
 
 ```bash
 docker run \
    --name trellobot \
-   --restart=unless-stopped \
    -d -p $PORT:$PORT \
-   --env-file .env
+   --env-file .env \
    trellobot:latest
 ```
 Вы можете посмотреть логи через такую команду. Флаг --follow будет автоматически обновлять вывод.
@@ -100,11 +105,10 @@ docker run \
 docker logs --follow  trellobot
 ```
 
-Также вы можете забрать переменные напрямую из окружения с помощью такой команды. Вы можете указать каждую переменную напрямую в параметре запуска через ``=``:
+Также вы можете забрать переменные напрямую из окружения с помощью такой команды. Вы можете указать каждую переменную напрямую в параметре запуска через ``=`` (только без пробелов рядом):
 ```bash
 docker run \
     --name trellobot \
-    --restart=unless-stopped \
     -d -p $PORT:$PORT \
     -e TELEGRAM_BOT_TOKEN \
     -e CHAT_ID \
