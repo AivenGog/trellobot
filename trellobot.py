@@ -39,6 +39,7 @@ def say(message):
 
 def create_card(action_data, member_name):
     logger.info(f"Starting a processing function: {sys._getframe(0).f_code.co_name}.")
+    card_name = action_data["card"]["name"]
     card_url = f"https://trello.com/c/{action_data['card']['shortLink']}"
     list_name = action_data["list"]["name"]
 
