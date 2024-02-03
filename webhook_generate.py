@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
+
 # The creation of webhook
 # trellobot.py MUST BE RUNNING
 
-import sys
 from config import *
+
+import sys
 import requests
 import logging
 

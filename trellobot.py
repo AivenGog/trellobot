@@ -9,7 +9,7 @@ import ipaddress
 import logging
 
 import requests
-from flask import Flask, request
+from flask import Flask, request, abort
 
 logging.basicConfig(level=LOGGING_LEVEL)
 logger = logging.getLogger(name="trellobot")
@@ -217,13 +217,15 @@ app = Flask(__name__)
 
 @app.route("/", methods=["POST", "HEAD"])
 def webhook():
-    if ipaddress.ip_address(request.remote_addr) not in ipaddress.ip_network(
+    if request.remote_addr != "127.0.0.1" and ipaddress.ip_address(
+        request.remote_addr
+    ) not in ipaddress.ip_network(
         # allow only Trello ips
         # https://developer.atlassian.com/cloud/trello/guides/rest-api/webhooks/#webhook-sources
         "104.192.142.240/28"
     ):
         logger.warning(
-            f"New request from not white-listed ip: {request.remote_addr}. Aborted"
+            f"New request from not white-listed ip: {request.remote_addr}. Aborted."
         )
         abort(403)
 
