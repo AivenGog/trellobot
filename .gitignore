@@ -13,6 +13,4 @@ env.bak/
 venv.bak/
 
 *.log
-
 *.code-workspace
-config.py
