@@ -76,6 +76,11 @@ nohup python3 trellobot.py &
 ## Запуск (Docker)
 Соберите образ докер контейнера.
 
+Скачайте репозиторий
+```bash
+git clone https://github.com/AivenGog/trellobot.git && cd trellobot
+```
+
 ```bash
 docker build -t trellobot . 
 ```
