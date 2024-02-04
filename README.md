@@ -80,16 +80,16 @@ nohup python3 trellobot.py &
 git clone https://github.com/AivenGog/trellobot.git && cd trellobot
 ```
 
-Соберите образ докер контейнера.
-
-```bash
-docker build -t trellobot . 
-```
-
 Объявите переменную ``PORT`` с номером вашего открытого порта, на котором будет работать сервер.
 
 ```bash
 export PORT=1234
+```
+
+Соберите образ докер контейнера.
+
+```bash
+docker build --build-arg PORT=$PORT -t trellobot . 
 ```
 Запустите контейнер.
 

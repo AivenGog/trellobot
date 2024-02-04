@@ -9,8 +9,8 @@ import sys
 import requests
 import logging
 
-logging.basicConfig(level=LOGGING_LEVEL)
-logger = logging.getLogger(name="delete_all_webhooks")
+logger = logging.getLogger(name="webhook_generate")
+logger.setLevel(LOGGING_LEVEL)
 logger.info("Module has started.")
 
 query = {"key": TRELLO_API_KEY, "token": TRELLO_TOKEN}

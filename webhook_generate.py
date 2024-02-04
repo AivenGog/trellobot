@@ -9,9 +9,8 @@ import sys
 import requests
 import logging
 
-logging.basicConfig(level=LOGGING_LEVEL)
 logger = logging.getLogger(name="webhook_generate")
-
+logger.setLevel(LOGGING_LEVEL)
 logger.info("Module has started.")
 
 
