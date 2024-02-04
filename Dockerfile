@@ -5,6 +5,9 @@ RUN chmod 755 *.py docker-entrypoint.sh
 
 RUN pip install -r requirements.txt
 
+#needed for printing logs instantly
+ENV PYTHONUNBUFFERED=1
+
 ARG PORT
 HEALTHCHECK --interval=5m --timeout=5s \
   CMD curl -I -f http://localhost:$PORT || exit 1

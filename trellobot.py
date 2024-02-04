@@ -217,12 +217,15 @@ app = Flask(__name__)
 
 @app.route("/", methods=["POST", "HEAD"])
 def webhook():
-    if request.remote_addr != "127.0.0.1" and ipaddress.ip_address(
-        request.remote_addr
-    ) not in ipaddress.ip_network(
-        # allow only Trello ips
-        # https://developer.atlassian.com/cloud/trello/guides/rest-api/webhooks/#webhook-sources
-        "104.192.142.240/28"
+    if (
+        request.remote_addr != "127.0.0.1"
+        and request.remote_addr != "172.17.0.1"
+        and ipaddress.ip_address(request.remote_addr)
+        not in ipaddress.ip_network(
+            # allow only Trello ips
+            # https://developer.atlassian.com/cloud/trello/guides/rest-api/webhooks/#webhook-sources
+            "104.192.142.240/28"
+        )
     ):
         logger.warning(
             f"New request from not white-listed ip: {request.remote_addr}. Aborted."
