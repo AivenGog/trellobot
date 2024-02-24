@@ -11,7 +11,8 @@ import logging
 import requests
 from flask import Flask, request, abort
 
-logger = logging.getLogger(name="webhook_generate")
+logging.basicConfig()
+logger = logging.getLogger(name="trellobot")
 logger.setLevel(LOGGING_LEVEL)
 logger.info("Main module has started.")
 

@@ -1,0 +1,45 @@
+services:
+  app:
+    image: python:3.11-slim-bookworm
+    build:
+      context: .
+      dockerfile: app.Dockerfile
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - CHAT_ID=${CHAT_ID}
+      - TRELLO_API_KEY=${TRELLO_API_KEY}
+      - TRELLO_TOKEN=${TRELLO_TOKEN}
+      - TRELLO_BOARD_ID=${TRELLO_BOARD_ID}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      - PORT=${PORT}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+    ports:
+    - ${PORT}:${PORT}
+    volumes:
+    - ./:/home/trellobot
+    healthcheck:
+      test: ["CMD-SHELL", "curl -I -f http://localhost:$PORT || exit 1"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+      start_interval: 5s
+
+  webhook_generate:
+    image: python:3.11-slim-bookworm
+    build:
+      context: .
+      dockerfile: webhook_generate.Dockerfile
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - CHAT_ID=${CHAT_ID}
+      - TRELLO_API_KEY=${TRELLO_API_KEY}
+      - TRELLO_TOKEN=${TRELLO_TOKEN}
+      - TRELLO_BOARD_ID=${TRELLO_BOARD_ID}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      - PORT=${PORT}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+    depends_on:
+    - app
+    volumes:
+    - ./:/home/webhook_generate
